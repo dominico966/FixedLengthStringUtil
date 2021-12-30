@@ -1,0 +1,82 @@
+package com.dominico966.util.vo.fixedString.annotation.util;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class ObjectUtil {
+    /**
+     * Retrieving fields list of specified class
+     * If recursively is true, retrieving fields from all class hierarchy
+     *
+     * @param clazz where fields are searching
+     * @param recursively param
+     * @return list of fields
+     */
+    public static Field[] getDeclaredFields(Class<?> clazz, boolean recursively) {
+        List<Field> fields = new LinkedList<Field>();
+        Field[] declaredFields = clazz.getDeclaredFields();
+        Collections.addAll(fields, declaredFields);
+
+        Class<?> superClass = clazz.getSuperclass();
+
+        if(superClass != null && recursively) {
+            Field[] declaredFieldsOfSuper = getDeclaredFields(superClass, recursively);
+            if(declaredFieldsOfSuper.length > 0)
+                Collections.addAll(fields, declaredFieldsOfSuper);
+        }
+
+        return fields.toArray(new Field[fields.size()]);
+    }
+
+    /**
+     * Retrieving fields list of specified class and which
+     * are annotated by incoming annotation class
+     * If recursively is true, retrieving fields from all class hierarchy
+     *
+     * @param clazz - where fields are searching
+     * @param annotationClass - specified annotation class
+     * @param recursively param
+     * @return list of annotated fields
+     */
+    public static Field[] getAnnotatedDeclaredFields(Class<?> clazz,
+                                                     Class<? extends Annotation> annotationClass,
+                                                     boolean recursively) {
+        Field[] allFields = getDeclaredFields(clazz, recursively);
+        List<Field> annotatedFields = new LinkedList<Field>();
+
+        for (Field field : allFields) {
+            if(field.isAnnotationPresent(annotationClass))
+                annotatedFields.add(field);
+        }
+
+        return annotatedFields.toArray(new Field[annotatedFields.size()]);
+    }
+
+    public static Field[] getAnnotatedDeclaredFields(Class<?> clazz,
+                                                     Class<? extends Annotation>[] annotationClasses,
+                                                     boolean recursively) {
+        Field[] allFields = getDeclaredFields(clazz, recursively);
+        List<Field> annotatedFields = new LinkedList<Field>();
+
+        for (Field field : allFields) {
+            for(Class<? extends Annotation> annotationClass : annotationClasses) {
+                if (field.isAnnotationPresent(annotationClass))
+                    annotatedFields.add(field);
+            }
+        }
+
+        return annotatedFields.toArray(new Field[annotatedFields.size()]);
+    }
+
+    public static <T> List<T> createGenericArrayList(Class<T> type) {
+        return new ArrayList<T>();
+    }
+
+    public static Class<?> getDeclaredListFieldGenericType(Field dataField) {
+        ParameterizedType stringListType = (ParameterizedType) dataField.getGenericType();
+        return (Class<?>) stringListType.getActualTypeArguments()[0];
+    }
+}
